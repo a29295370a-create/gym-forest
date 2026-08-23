@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>健身器材設定與菜單記錄</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans TC', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen pb-16">
+
+    <!-- Header -->
+    <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-50 shadow-md">
+        <div class="max-w-md mx-auto px-4 py-3.5 flex justify-between items-center">
+            <h1 class="text-base font-bold tracking-wide flex items-center gap-2">
+                <span class="text-emerald-400">⚡</span> 我的健身菜單與設定
+            </h1>
+            <div class="flex gap-2">
+                <button onclick="toggleForm()" id="toggleFormBtn" class="text-xs bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-3 py-1.5 rounded-lg transition">
+                    ➕ 新動態
+                </button>
+                <button onclick="exportData()" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 px-2.5 py-1.5 rounded-lg border border-slate-600 transition">
+                    備份
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-md mx-auto px-4 py-4 space-y-4">
+        
+        <!-- Collapsible Input Form Card -->
+        <section id="formSection" class="hidden bg-slate-800 border border-slate-700 rounded-2xl p-4 shadow-xl transition-all">
+            <div class="flex justify-between items-center mb-3">
+                <h2 id="formTitle" class="text-sm font-bold text-emerald-400">➕ 新增/編輯動作設定</h2>
+                <button type="button" onclick="toggleForm()" class="text-xs text-slate-400 hover:text-white">關閉 ✕</button>
+            </div>
+            
+            <form id="workoutForm" onsubmit="saveRecord(event)" class="space-y-3 text-xs">
+                <input type="hidden" id="recordId">
+
+                <!-- 動作名稱與肌群分類 -->
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block font-medium text-slate-300 mb-1">動作名稱 *</label>
+                        <input type="text" id="exerciseName" required placeholder="例如：斜向推蹬機" 
+                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="font-medium text-slate-300">肌群分類 *</label>
+                            <button type="button" onclick="manageCategories()" class="text-[10px] text-emerald-400 underline">管理分類</button>
+                        </div>
+                        <select id="muscleGroup" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-emerald-500">
+                            <!-- Dynamically populated -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 重量、次數、組數 -->
+                <div class="grid grid-cols-3 gap-2">
+                    <div>
+                        <label class="block font-medium text-slate-300 mb-1">重量 (kg)</label>
+                        <input type="number" step="0.5" id="weight" placeholder="0" 
+                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-slate-300 mb-1">次數 (Reps)</label>
+                        <input type="number" id="reps" placeholder="0" 
+                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-slate-300 mb-1">組數 (Sets)</label>
+                        <input type="number" id="sets" placeholder="1" 
+                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
+                    </div>
+                </div>
+
+                <!-- 器材設定參數區 -->
+                <div class="bg-slate-900/50 p-2.5 rounded-xl border border-slate-800 space-y-2">
+                    <p class="font-bold text-emerald-400">⚙️ 器材設定</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" id="equipmentHeight" placeholder="高度/檔位 (例:第12格)" 
+                            class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
+                        <input type="text" id="equipmentAngle" placeholder="角度 (例:踏板第2段)" 
+                            class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <input type="text" id="equipmentAccessory" placeholder="配件/其他細節 (例:V字把手)" 
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
+                </div>
+
+                <!-- 注意事項與行程 -->
+                <div class="space-y-2">
+                    <input type="text" id="romNotes" placeholder="行程/軌跡說明 (例:下放2秒、全行程)" 
+                        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
+                    <textarea id="precautions" rows="2" placeholder="注意事項與發力提示 (例:核心收緊、避免代償)" 
+                        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 resize-none"></textarea>
+                </div>
+
+                <button type="submit" id="submitBtn" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-2.5 rounded-xl transition">
+                    儲存動作設定
+                </button>
+            </form>
+        </section>
+
+        <!-- Category Filter Tabs (Horizontal Scrollable) -->
+        <div id="categoryTabs" class="flex gap-1 overflow-x-auto bg-slate-800 p-1 rounded-xl border border-slate-700 text-xs font-medium no-scrollbar">
+            <!-- Dynamically populated tabs -->
+        </div>
+
+        <!-- Search Bar -->
+        <div>
+            <input type="text" id="searchInput" oninput="renderRecords()" placeholder="🔍 搜尋動作名稱..." 
+                class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
+        </div>
+
+        <!-- Records Container Grouped -->
+        <div id="recordsContainer" class="space-y-4">
+            <!-- Dynamic Groups -->
+        </div>
+
+    </main>
+
+    <script>
+        let categories = JSON.parse(localStorage.getItem('gym_categories') || '["全部", "胸肩", "背", "臀腿", "其他"]');
+        let records = JSON.parse(localStorage.getItem('gym_equipment_records_v3') || '[]');
+        let currentFilter = categories[0] || '全部';
+
+        function initCategories() {
+            const select = document.getElementById('muscleGroup');
+            select.innerHTML = categories.filter(c => c !== '全部').map(c => `<option value="${c}">${c}</option>`).join('');
+            
+            const tabsContainer = document.getElementById('categoryTabs');
+            tabsContainer.innerHTML = categories.map(c => `
+                <button onclick="filterGroup('${c}')" id="tab-${c}" class="whitespace-nowrap px-3 py-2 rounded-lg transition ${currentFilter === c ? 'bg-emerald-500 text-slate-950 font-bold' : 'text-slate-300 hover:text-white'}">
+                    ${c}
+                </button>
+            `).join('');
+        }
+
+        function manageCategories() {
+            const action = prompt("請選擇操作：\n1. 新增分類\n2. 重新命名分類\n3. 刪除分類\n(請輸入數字 1、2 或 3)", "1");
+            if (action === "1") {
+                const newCat = prompt("請輸入新分類名稱：");
+                if (newCat && !categories.includes(newCat.trim())) {
+                    categories.push(newCat.trim());
+                    localStorage.setItem('gym_categories', JSON.stringify(categories));
+                    initCategories();
+                    renderRecords();
+                }
+            } else if (action === "2") {
+                const target = prompt("請輸入想要修改的現有分類名稱：");
+                if (target && categories.includes(target) && target !== '全部') {
+                    const newName = prompt(`將「${target}」重新命名為：`);
+                    if (newName && newName.trim()) {
+                        categories = categories.map(c => c === target ? newName.trim() : c);
+                        records.forEach(r => { if (r.muscleGroup === target) r.muscleGroup = newName.trim(); });
+                        localStorage.setItem('gym_categories', JSON.stringify(categories));
+                        localStorage.setItem('gym_equipment_records_v3', JSON.stringify(records));
+                        initCategories();
+                        renderRecords();
+                    }
+                } else {
+                    alert("找不到該分類或無法修改預設選項。");
+                }
+            } else if (action === "3") {
+                const target = prompt("請輸入想要刪除的分類名稱：");
+                if (target && categories.includes(target) && target !== '全部') {
+                    if (confirm(`確定要刪除分類「${target}」嗎？該分類下的動作將會被移至「其他」。`)) {
+                        categories = categories.filter(c => c !== target);
+                        records.forEach(r => { if (r.muscleGroup === target) r.muscleGroup = '其他'; });
+                        if (!categories.includes('其他')) categories.push('other');
+                        localStorage.setItem('gym_categories', JSON.stringify(categories));
+                        localStorage.setItem('gym_equipment_records_v3', JSON.stringify(records));
+                        if (currentFilter === target) currentFilter = '全部';
+                        initCategories();
+                        renderRecords();
+                    }
+                }
+            }
+        }
+
+        function toggleForm() {
+            const formSection = document.getElementById('formSection');
+            formSection.classList.toggle('hidden');
+            if (!formSection.classList.contains('hidden')) {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function filterGroup(group) {
+            currentFilter = group;
+            initCategories();
+            renderRecords();
+        }
+
+        function saveRecord(e) {
+            e.preventDefault();
+            const id = document.getElementById('recordId').value;
+            const data = {
+                id: id ? Number(id) : Date.now(),
+                exerciseName: document.getElementById('exerciseName').value.trim(),
+                muscleGroup: document.getElementById('muscleGroup').value,
+                weight: document.getElementById('weight').value,
+                reps: document.getElementById('reps').value,
+                sets: document.getElementById('sets').value,
+                equipmentHeight: document.getElementById('equipmentHeight').value.trim(),
+                equipmentAngle: document.getElementById('equipmentAngle').value.trim(),
+                equipmentAccessory: document.getElementById('equipmentAccessory').value.trim(),
+                romNotes: document.getElementById('romNotes').value.trim(),
+                precautions: document.getElementById('precautions').value.trim()
+            };
+
+            if (id) {
+                const index = records.findIndex(r => r.id === Number(id));
+                if (index !== -1) records[index] = data;
+            } else {
+                records.unshift(data);
+            }
+
+            localStorage.setItem('gym_equipment_records_v3', JSON.stringify(records));
+            resetForm();
+            toggleForm();
+            renderRecords();
+        }
+
+        function moveRecord(id, direction) {
+            const index = records.findIndex(r => r.id === id);
+            if (index === -1) return;
+            const targetIndex = index + direction;
+            if (targetIndex < 0 || targetIndex >= records.length) return;
+
+            // Swap
+            const temp = records[index];
+            records[index] = records[targetIndex];
+            records[targetIndex] = temp;
+
+            localStorage.setItem('gym_equipment_records_v3', JSON.stringify(records));
+            renderRecords();
+        }
+
+        function renderRecords() {
+            const container = document.getElementById('recordsContainer');
+            const searchKeyword = document.getElementById('searchInput').value.toLowerCase();
+            
+            let filtered = records.filter(r => {
+                const matchGroup = (currentFilter === '全部' || r.muscleGroup === currentFilter);
+                const matchSearch = r.exerciseName.toLowerCase().includes(searchKeyword);
+                return matchGroup && matchSearch;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-10 bg-slate-800/40 border border-slate-800 rounded-2xl text-slate-500 text-xs">
+                        目前沒有相關的訓練設定，點擊右上角「➕ 新動態」開始建立菜單！
+                    </div>
+                `;
+                return;
+            }
+
+            const activeGroups = currentFilter === '全部' ? categories.filter(c => c !== '全部') : [currentFilter];
+            let htmlOutput = '';
+
+            activeGroups.forEach(groupName => {
+                const groupItems = filtered.filter(r => r.muscleGroup === groupName);
+                if (groupItems.length === 0) return;
+
+                if (currentFilter === '全部') {
+                    htmlOutput += `<div class="text-xs font-bold text-emerald-400 tracking-wider pt-2 px-1">🔹 ${groupName} (${groupItems.length})</div>`;
+                }
+
+                groupItems.forEach((r, idx) => {
+                    htmlOutput += `
+                        <div class="bg-slate-800 border border-slate-700/80 rounded-2xl p-3.5 shadow-md space-y-2.5">
+                            <div class="flex justify-between items-start">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs bg-slate-700 text-emerald-300 px-2 py-0.5 rounded-md font-medium">${escapeHtml(r.muscleGroup)}</span>
+                                    <h4 class="font-bold text-sm text-white">${escapeHtml(r.exerciseName)}</h4>
+                                </div>
+                                <div class="flex gap-1 items-center">
+                                    <button onclick="moveRecord(${r.id}, -1)" title="往上移" class="text-[10px] bg-slate-700 hover:bg-slate-600 text-slate-300 px-1.5 py-0.5 rounded">▲</button>
+                                    <button onclick="moveRecord(${r.id}, 1)" title="往下移" class="text-[10px] bg-slate-700 hover:bg-slate-600 text-slate-300 px-1.5 py-0.5 rounded">▼</button>
+                                    <button onclick="editRecord(${r.id})" class="text-[11px] bg-slate-700 hover:bg-slate-600 text-slate-300 px-2 py-0.5 rounded-lg ml-1">編輯</button>
+                                    <button onclick="deleteRecord(${r.id})" class="text-[11px] bg-red-950/60 hover:bg-red-900 text-red-300 px-2 py-0.5 rounded-lg">刪除</button>
+                                </div>
+                            </div>
+
+                            <!-- 數據與設定摘要 -->
+                            <div class="grid grid-cols-3 gap-1 text-xs bg-slate-900/60 p-2 rounded-xl border border-slate-700/50 text-center">
+                                <div><span class="text-slate-500 block text-[10px]">重量</span><span class="text-emerald-400 font-bold">${r.weight ? r.weight + ' kg' : '-'}</span></div>
+                                <div><span class="text-slate-500 block text-[10px]">次數/組數</span><span class="text-white font-bold">${r.reps || '-'}r × ${r.sets || '-'}s</span></div>
+                                <div><span class="text-slate-500 block text-[10px]">設定檔位/角度</span><span class="text-slate-300 font-medium truncate block">${escapeHtml(r.equipmentHeight || r.equipmentAngle || '無')}</span></div>
+                            </div>
+
+                            <!-- 詳細器材與備註 -->
+                            ${(r.equipmentAngle || r.equipmentAccessory || r.romNotes || r.precautions) ? `
+                                <div class="text-xs space-y-1 pt-1 border-t border-slate-700/60 text-slate-300">
+                                    ${r.equipmentAngle ? `<div><span class="text-slate-500">角度細節：</span>${escapeHtml(r.equipmentAngle)}</div>` : ''}
+                                    ${r.equipmentAccessory ? `<div><span class="text-slate-500">配件：</span>${escapeHtml(r.equipmentAccessory)}</div>` : ''}
+                                    ${r.romNotes ? `<div><span class="text-emerald-400">行程：</span>${escapeHtml(r.romNotes)}</div>` : ''}
+                                    ${r.precautions ? `<div><span class="text-amber-400">注意：</span>${escapeHtml(r.precautions)}</div>` : ''}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                });
+            });
+
+            container.innerHTML = htmlOutput;
+        }
+
+        function editRecord(id) {
+            const r = records.find(item => item.id === id);
+            if (!r) return;
+
+            document.getElementById('recordId').value = r.id;
+            document.getElementById('exerciseName').value = r.exerciseName;
+            document.getElementById('muscleGroup').value = r.muscleGroup || '其他';
+            document.getElementById('weight').value = r.weight;
+            document.getElementById('reps').value = r.reps;
+            document.getElementById('sets').value = r.sets;
+            document.getElementById('equipmentHeight').value = r.equipmentHeight;
+            document.getElementById('equipmentAngle').value = r.equipmentAngle;
+            document.getElementById('equipmentAccessory').value = r.equipmentAccessory;
+            document.getElementById('romNotes').value = r.romNotes;
+            document.getElementById('precautions').value = r.precautions;
+
+            document.getElementById('formTitle').innerText = '✏️ 編輯動作設定';
+            document.getElementById('submitBtn').innerText = '更新動作設定';
+
+            const formSection = document.getElementById('formSection');
+            if (formSection.classList.contains('hidden')) {
+                toggleForm();
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('workoutForm').reset();
+            document.getElementById('recordId').value = '';
+            document.getElementById('formTitle').innerText = '➕ 新增/編輯動作設定';
+            document.getElementById('submitBtn').innerText = '儲存動作設定';
+        }
+
+        function deleteRecord(id) {
+            if (confirm('確定要刪除這筆動作記錄嗎？')) {
+                records = records.filter(item => item.id !== id);
+                localStorage.setItem('gym_equipment_records_v3', JSON.stringify(records));
+                renderRecords();
+            }
+        }
+
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ categories, records }, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "gym_menu_backup.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        // Initial setup
+        initCategories();
+        renderRecords();
+    </script>
+</body>
+</html>
