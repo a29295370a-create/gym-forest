@@ -50,7 +50,7 @@
                 <div class="grid grid-cols-2 gap-2">
                     <div>
                         <label class="block font-medium text-slate-300 mb-1">動作名稱 *</label>
-                        <input type="text" id="exerciseName" required placeholder="例如：斜向推蹬機" 
+                        <input type="text" id="exerciseName" required placeholder="例如：二頭彎舉" 
                             class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
                     </div>
                     <div>
@@ -138,7 +138,23 @@
 
     <script>
         let categories = JSON.parse(localStorage.getItem('gym_categories') || '["全部", "胸肩", "背", "臀腿", "其他"]');
-        let records = JSON.parse(localStorage.getItem('gym_equipment_records_v5') || '[]');
+        let records = JSON.parse(localStorage.getItem('gym_equipment_records_v6') || JSON.stringify([
+            {
+                id: 1,
+                exerciseName: "二頭彎舉",
+                muscleGroup: "其他",
+                weight: "12",
+                weightUnit: "kg",
+                reps: "12",
+                sets: "3",
+                equipmentHeight: "",
+                equipmentAngle: "",
+                equipmentAccessory: "啞鈴",
+                romNotes: "控制下放速度",
+                precautions: "手肘夾緊軀幹，不要甩動",
+                videoUrl: "https://www.youtube.com/results?search_query=二頭彎舉教學"
+            }
+        ]));
         let currentFilter = categories[0] || '全部';
 
         function initCategories() {
@@ -171,7 +187,7 @@
                         categories = categories.map(c => c === target ? newName.trim() : c);
                         records.forEach(r => { if (r.muscleGroup === target) r.muscleGroup = newName.trim(); });
                         localStorage.setItem('gym_categories', JSON.stringify(categories));
-                        localStorage.setItem('gym_equipment_records_v5', JSON.stringify(records));
+                        localStorage.setItem('gym_equipment_records_v6', JSON.stringify(records));
                         initCategories();
                         renderRecords();
                     }
@@ -186,7 +202,7 @@
                         records.forEach(r => { if (r.muscleGroup === target) r.muscleGroup = '其他'; });
                         if (!categories.includes('其他')) categories.push('其他');
                         localStorage.setItem('gym_categories', JSON.stringify(categories));
-                        localStorage.setItem('gym_equipment_records_v5', JSON.stringify(records));
+                        localStorage.setItem('gym_equipment_records_v6', JSON.stringify(records));
                         if (currentFilter === target) currentFilter = '全部';
                         initCategories();
                         renderRecords();
@@ -235,7 +251,7 @@
                 records.unshift(data);
             }
 
-            localStorage.setItem('gym_equipment_records_v5', JSON.stringify(records));
+            localStorage.setItem('gym_equipment_records_v6', JSON.stringify(records));
             resetForm();
             toggleForm();
             renderRecords();
@@ -251,7 +267,7 @@
             records[index] = records[targetIndex];
             records[targetIndex] = temp;
 
-            localStorage.setItem('gym_equipment_records_v5', JSON.stringify(records));
+            localStorage.setItem('gym_equipment_records_v6', JSON.stringify(records));
             renderRecords();
         }
 
@@ -367,7 +383,7 @@
         function deleteRecord(id) {
             if (confirm('確定要刪除這筆動作記錄嗎？')) {
                 records = records.filter(item => item.id !== id);
-                localStorage.setItem('gym_equipment_records_v5', JSON.stringify(records));
+                localStorage.setItem('gym_equipment_records_v6', JSON.stringify(records));
                 renderRecords();
             }
         }
