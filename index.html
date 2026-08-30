@@ -102,12 +102,14 @@
                         class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
                 </div>
 
-                <!-- 注意事項與行程 -->
+                <!-- 注意事項與行程與教學連結 -->
                 <div class="space-y-2">
                     <input type="text" id="romNotes" placeholder="行程/軌跡說明 (例:下放2秒、全行程)" 
                         class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
                     <textarea id="precautions" rows="2" placeholder="注意事項與發力提示 (例:核心收緊、避免代償)" 
                         class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 resize-none"></textarea>
+                    <input type="text" id="videoUrl" placeholder="🔗 動作教學連結 (YouTube、IG 等網址)..." 
+                        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
                 </div>
 
                 <button type="submit" id="submitBtn" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-2.5 rounded-xl transition">
@@ -136,7 +138,7 @@
 
     <script>
         let categories = JSON.parse(localStorage.getItem('gym_categories') || '["全部", "胸肩", "背", "臀腿", "其他"]');
-        let records = JSON.parse(localStorage.getItem('gym_equipment_records_v4') || '[]');
+        let records = JSON.parse(localStorage.getItem('gym_equipment_records_v5') || '[]');
         let currentFilter = categories[0] || '全部';
 
         function initCategories() {
@@ -169,7 +171,7 @@
                         categories = categories.map(c => c === target ? newName.trim() : c);
                         records.forEach(r => { if (r.muscleGroup === target) r.muscleGroup = newName.trim(); });
                         localStorage.setItem('gym_categories', JSON.stringify(categories));
-                        localStorage.setItem('gym_equipment_records_v4', JSON.stringify(records));
+                        localStorage.setItem('gym_equipment_records_v5', JSON.stringify(records));
                         initCategories();
                         renderRecords();
                     }
@@ -184,7 +186,7 @@
                         records.forEach(r => { if (r.muscleGroup === target) r.muscleGroup = '其他'; });
                         if (!categories.includes('其他')) categories.push('其他');
                         localStorage.setItem('gym_categories', JSON.stringify(categories));
-                        localStorage.setItem('gym_equipment_records_v4', JSON.stringify(records));
+                        localStorage.setItem('gym_equipment_records_v5', JSON.stringify(records));
                         if (currentFilter === target) currentFilter = '全部';
                         initCategories();
                         renderRecords();
@@ -222,7 +224,8 @@
                 equipmentAngle: document.getElementById('equipmentAngle').value.trim(),
                 equipmentAccessory: document.getElementById('equipmentAccessory').value.trim(),
                 romNotes: document.getElementById('romNotes').value.trim(),
-                precautions: document.getElementById('precautions').value.trim()
+                precautions: document.getElementById('precautions').value.trim(),
+                videoUrl: document.getElementById('videoUrl').value.trim()
             };
 
             if (id) {
@@ -232,7 +235,7 @@
                 records.unshift(data);
             }
 
-            localStorage.setItem('gym_equipment_records_v4', JSON.stringify(records));
+            localStorage.setItem('gym_equipment_records_v5', JSON.stringify(records));
             resetForm();
             toggleForm();
             renderRecords();
@@ -248,7 +251,7 @@
             records[index] = records[targetIndex];
             records[targetIndex] = temp;
 
-            localStorage.setItem('gym_equipment_records_v4', JSON.stringify(records));
+            localStorage.setItem('gym_equipment_records_v5', JSON.stringify(records));
             renderRecords();
         }
 
@@ -284,6 +287,8 @@
 
                 groupItems.forEach((r, idx) => {
                     const unit = r.weightUnit || 'kg';
+                    const linkButton = r.videoUrl ? `<a href="${escapeHtml(r.videoUrl)}" target="_blank" class="inline-flex items-center gap-1 text-[11px] bg-sky-950/60 hover:bg-sky-900 text-sky-300 border border-sky-800 px-2.5 py-1 rounded-lg transition">🔗 觀看教學</a>` : '';
+
                     htmlOutput += `
                         <div class="bg-slate-800 border border-slate-700/80 rounded-2xl p-3.5 shadow-md space-y-2.5">
                             <div class="flex justify-between items-start">
@@ -306,13 +311,14 @@
                                 <div><span class="text-slate-500 block text-[10px]">設定檔位/角度</span><span class="text-slate-300 font-medium truncate block">${escapeHtml(r.equipmentHeight || r.equipmentAngle || '無')}</span></div>
                             </div>
 
-                            <!-- 詳細器材與備註 -->
-                             ${(r.equipmentAngle || r.equipmentAccessory || r.romNotes || r.precautions) ? `
+                            <!-- 詳細器材與備註與連結 -->
+                            ${(r.equipmentAngle || r.equipmentAccessory || r.romNotes || r.precautions || r.videoUrl) ? `
                                 <div class="text-xs space-y-1 pt-1 border-t border-slate-700/60 text-slate-300">
                                     ${r.equipmentAngle ? `<div><span class="text-slate-500">角度細節：</span>${escapeHtml(r.equipmentAngle)}</div>` : ''}
                                     ${r.equipmentAccessory ? `<div><span class="text-slate-500">配件：</span>${escapeHtml(r.equipmentAccessory)}</div>` : ''}
                                     ${r.romNotes ? `<div><span class="text-emerald-400">行程：</span>${escapeHtml(r.romNotes)}</div>` : ''}
                                     ${r.precautions ? `<div><span class="text-amber-400">注意：</span>${escapeHtml(r.precautions)}</div>` : ''}
+                                    ${r.videoUrl ? `<div class="pt-1">${linkButton}</div>` : ''}
                                 </div>
                             ` : ''}
                         </div>
@@ -339,6 +345,7 @@
             document.getElementById('equipmentAccessory').value = r.equipmentAccessory;
             document.getElementById('romNotes').value = r.romNotes;
             document.getElementById('precautions').value = r.precautions;
+            document.getElementById('videoUrl').value = r.videoUrl || '';
 
             document.getElementById('formTitle').innerText = '✏️ 編輯動作設定';
             document.getElementById('submitBtn').innerText = '更新動作設定';
@@ -360,7 +367,7 @@
         function deleteRecord(id) {
             if (confirm('確定要刪除這筆動作記錄嗎？')) {
                 records = records.filter(item => item.id !== id);
-                localStorage.setItem('gym_equipment_records_v4', JSON.stringify(records));
+                localStorage.setItem('gym_equipment_records_v5', JSON.stringify(records));
                 renderRecords();
             }
         }
