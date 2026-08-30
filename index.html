@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>健身器材設定與菜單記錄</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
@@ -59,10 +59,16 @@
                     </div>
                 </div>
 
-                <!-- 重量、次數、組數 -->
+                <!-- 重量、次數、組數 (含單位切換) -->
                 <div class="grid grid-cols-3 gap-2">
                     <div>
-                        <label class="block font-medium text-slate-300 mb-1">重量 (kg)</label>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="font-medium text-slate-300">重量</label>
+                            <select id="weightUnit" class="bg-slate-900 text-emerald-400 text-[10px] font-bold border border-slate-700 rounded px-1 py-0.5 focus:outline-none">
+                                <option value="kg">kg</option>
+                                <option value="lbs">lbs</option>
+                            </select>
+                        </div>
                         <input type="number" step="0.5" id="weight" placeholder="0" 
                             class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
                     </div>
@@ -125,7 +131,7 @@
 
     <script>
         let categories = JSON.parse(localStorage.getItem('gym_categories') || '["全部", "胸肩", "背", "臀腿", "其他"]');
-        let records = JSON.parse(localStorage.getItem('gym_equipment_records_v3') || '[]');
+        let records = JSON.parse(localStorage.getItem('gym_equipment_records_v4') || '[]');
         let currentFilter = categories[0] || '全部';
 
         function initCategories() {
@@ -158,7 +164,7 @@
                         categories = categories.map(c => c === target ? newName.trim() : c);
                         records.forEach(r => { if (r.muscleGroup === target) r.muscleGroup = newName.trim(); });
                         localStorage.setItem('gym_categories', JSON.stringify(categories));
-                        localStorage.setItem('gym_equipment_records_v3', JSON.stringify(records));
+                        localStorage.setItem('gym_equipment_records_v4', JSON.stringify(records));
                         initCategories();
                         renderRecords();
                     }
@@ -171,9 +177,9 @@
                     if (confirm(`確定要刪除分類「${target}」嗎？該分類下的動作將會被移至「其他」。`)) {
                         categories = categories.filter(c => c !== target);
                         records.forEach(r => { if (r.muscleGroup === target) r.muscleGroup = '其他'; });
-                        if (!categories.includes('其他')) categories.push('other');
+                        if (!categories.includes('其他')) categories.push('其他');
                         localStorage.setItem('gym_categories', JSON.stringify(categories));
-                        localStorage.setItem('gym_equipment_records_v3', JSON.stringify(records));
+                        localStorage.setItem('gym_equipment_records_v4', JSON.stringify(records));
                         if (currentFilter === target) currentFilter = '全部';
                         initCategories();
                         renderRecords();
@@ -204,6 +210,7 @@
                 exerciseName: document.getElementById('exerciseName').value.trim(),
                 muscleGroup: document.getElementById('muscleGroup').value,
                 weight: document.getElementById('weight').value,
+                weightUnit: document.getElementById('weightUnit').value,
                 reps: document.getElementById('reps').value,
                 sets: document.getElementById('sets').value,
                 equipmentHeight: document.getElementById('equipmentHeight').value.trim(),
@@ -220,7 +227,7 @@
                 records.unshift(data);
             }
 
-            localStorage.setItem('gym_equipment_records_v3', JSON.stringify(records));
+            localStorage.setItem('gym_equipment_records_v4', JSON.stringify(records));
             resetForm();
             toggleForm();
             renderRecords();
@@ -232,12 +239,11 @@
             const targetIndex = index + direction;
             if (targetIndex < 0 || targetIndex >= records.length) return;
 
-            // Swap
             const temp = records[index];
             records[index] = records[targetIndex];
             records[targetIndex] = temp;
 
-            localStorage.setItem('gym_equipment_records_v3', JSON.stringify(records));
+            localStorage.setItem('gym_equipment_records_v4', JSON.stringify(records));
             renderRecords();
         }
 
@@ -272,6 +278,7 @@
                 }
 
                 groupItems.forEach((r, idx) => {
+                    const unit = r.weightUnit || 'kg';
                     htmlOutput += `
                         <div class="bg-slate-800 border border-slate-700/80 rounded-2xl p-3.5 shadow-md space-y-2.5">
                             <div class="flex justify-between items-start">
@@ -289,13 +296,13 @@
 
                             <!-- 數據與設定摘要 -->
                             <div class="grid grid-cols-3 gap-1 text-xs bg-slate-900/60 p-2 rounded-xl border border-slate-700/50 text-center">
-                                <div><span class="text-slate-500 block text-[10px]">重量</span><span class="text-emerald-400 font-bold">${r.weight ? r.weight + ' kg' : '-'}</span></div>
+                                <div><span class="text-slate-500 block text-[10px]">重量</span><span class="text-emerald-400 font-bold">${r.weight ? r.weight + ' ' + unit : '-'}</span></div>
                                 <div><span class="text-slate-500 block text-[10px]">次數/組數</span><span class="text-white font-bold">${r.reps || '-'}r × ${r.sets || '-'}s</span></div>
                                 <div><span class="text-slate-500 block text-[10px]">設定檔位/角度</span><span class="text-slate-300 font-medium truncate block">${escapeHtml(r.equipmentHeight || r.equipmentAngle || '無')}</span></div>
                             </div>
 
                             <!-- 詳細器材與備註 -->
-                            ${(r.equipmentAngle || r.equipmentAccessory || r.romNotes || r.precautions) ? `
+                             ${(r.equipmentAngle || r.equipmentAccessory || r.romNotes || r.precautions) ? `
                                 <div class="text-xs space-y-1 pt-1 border-t border-slate-700/60 text-slate-300">
                                     ${r.equipmentAngle ? `<div><span class="text-slate-500">角度細節：</span>${escapeHtml(r.equipmentAngle)}</div>` : ''}
                                     ${r.equipmentAccessory ? `<div><span class="text-slate-500">配件：</span>${escapeHtml(r.equipmentAccessory)}</div>` : ''}
@@ -319,6 +326,7 @@
             document.getElementById('exerciseName').value = r.exerciseName;
             document.getElementById('muscleGroup').value = r.muscleGroup || '其他';
             document.getElementById('weight').value = r.weight;
+            document.getElementById('weightUnit').value = r.weightUnit || 'kg';
             document.getElementById('reps').value = r.reps;
             document.getElementById('sets').value = r.sets;
             document.getElementById('equipmentHeight').value = r.equipmentHeight;
@@ -339,6 +347,7 @@
         function resetForm() {
             document.getElementById('workoutForm').reset();
             document.getElementById('recordId').value = '';
+            document.getElementById('weightUnit').value = 'kg';
             document.getElementById('formTitle').innerText = '➕ 新增/編輯動作設定';
             document.getElementById('submitBtn').innerText = '儲存動作設定';
         }
@@ -346,7 +355,7 @@
         function deleteRecord(id) {
             if (confirm('確定要刪除這筆動作記錄嗎？')) {
                 records = records.filter(item => item.id !== id);
-                localStorage.setItem('gym_equipment_records_v3', JSON.stringify(records));
+                localStorage.setItem('gym_equipment_records_v4', JSON.stringify(records));
                 renderRecords();
             }
         }
